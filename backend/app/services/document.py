@@ -7,7 +7,7 @@ import csv
 import pypdf
 import docx
 import openpyxl
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from openai import AsyncOpenAI
 
 from app.core.config import get_settings
