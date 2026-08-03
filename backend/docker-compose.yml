@@ -1,0 +1,316 @@
+# ============================================================
+# Multi-Tenant Text-to-SQL Platform — Docker Compose
+# ============================================================
+# Services:
+#   app         - FastAPI application
+#   worker      - Celery document processing worker
+#   beat        - Celery periodic task scheduler
+#   flower      - Celery monitoring UI
+#   db          - PostgreSQL 16 + pgvector
+#   redis       - Redis 7 (cache + message broker)
+#   minio       - MinIO object storage
+#   prometheus  - Metrics collection
+#   grafana     - Metrics visualization
+# ============================================================
+
+version: "3.9"
+
+services:
+
+  # ────────────────────────────────────────────────────────────
+  # FastAPI Application
+  # ────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: text-to-sql-platform:latest
+    container_name: texttosql_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=${DATABASE_NAME:-texttosql_db}
+      - DATABASE_USER=${DATABASE_USER:-texttosql_user}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?OPENAI_API_KEY is required}
+      - SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL:-admin@platform.local}
+      - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD:?SUPERADMIN_PASSWORD is required}
+      - SUPERADMIN_TENANT_NAME=${SUPERADMIN_TENANT_NAME:-Platform Admin}
+      - SUPERADMIN_TENANT_SLUG=${SUPERADMIN_TENANT_SLUG:-platform-admin}
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+    volumes:
+      - app_logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - platform_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ────────────────────────────────────────────────────────────
+  # Celery Worker (Document Processing + Schema Sync)
+  # ────────────────────────────────────────────────────────────
+  worker:
+    image: text-to-sql-platform:latest
+    container_name: texttosql_worker
+    restart: unless-stopped
+    command: >
+      celery -A app.workers.celery_app worker
+      --loglevel=info
+      --concurrency=${CELERY_WORKER_CONCURRENCY:-4}
+      --queues=documents,schema,audit,default
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=${DATABASE_NAME:-texttosql_db}
+      - DATABASE_USER=${DATABASE_USER:-texttosql_user}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:?}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:?}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:?}
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - SECRET_KEY=${SECRET_KEY:?}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?}
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - platform_net
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.workers.celery_app", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ────────────────────────────────────────────────────────────
+  # Celery Beat (Periodic Tasks)
+  # ────────────────────────────────────────────────────────────
+  beat:
+    image: text-to-sql-platform:latest
+    container_name: texttosql_beat
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app beat --loglevel=info --scheduler celery.beat.PersistentScheduler
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=${DATABASE_NAME:-texttosql_db}
+      - DATABASE_USER=${DATABASE_USER:-texttosql_user}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:?}
+      - SECRET_KEY=${SECRET_KEY:?}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - platform_net
+
+  # ────────────────────────────────────────────────────────────
+  # Flower — Celery Monitoring
+  # ────────────────────────────────────────────────────────────
+  flower:
+    image: text-to-sql-platform:latest
+    container_name: texttosql_flower
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - SECRET_KEY=${SECRET_KEY:?}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?}
+    depends_on:
+      - worker
+    networks:
+      - platform_net
+
+  # ────────────────────────────────────────────────────────────
+  # PostgreSQL 16 + pgvector
+  # ────────────────────────────────────────────────────────────
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: texttosql_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-texttosql_db}
+      POSTGRES_USER: ${DATABASE_USER:-texttosql_user}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - platform_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-texttosql_user} -d ${DATABASE_NAME:-texttosql_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    shm_size: 256mb
+
+  # ────────────────────────────────────────────────────────────
+  # Redis 7
+  # ────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: texttosql_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1
+      --loglevel warning
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - platform_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ────────────────────────────────────────────────────────────
+  # MinIO Object Storage
+  # ────────────────────────────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: texttosql_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - platform_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ────────────────────────────────────────────────────────────
+  # Prometheus
+  # ────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: texttosql_prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - platform_net
+
+  # ────────────────────────────────────────────────────────────
+  # Grafana
+  # ────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: texttosql_grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - platform_net
+
+
+# ────────────────────────────────────────────────────────────
+# Volumes
+# ────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  app_logs:
+    driver: local
+
+
+# ────────────────────────────────────────────────────────────
+# Networks
+# ────────────────────────────────────────────────────────────
+networks:
+  platform_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

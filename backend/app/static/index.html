@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexusAI — Multi-Tenant Text-to-SQL & Document Chat Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --bg-primary: #0b0f19;
+      --bg-surface: #131b2e;
+      --bg-card: #1c2640;
+      --border-color: #2a3859;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #10b981;
+      --accent-purple: #8b5cf6;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
+    body { background-color: var(--bg-primary); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar { width: 280px; background: var(--bg-surface); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px; }
+    .brand { display: flex; align-items: center; gap: 12px; font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 24px; }
+    .brand i { color: var(--primary); font-size: 1.5rem; }
+
+    .nav-list { list-style: none; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--radius); color: var(--text-muted); cursor: pointer; transition: all 0.2s; font-weight: 500; }
+    .nav-item:hover, .nav-item.active { background: var(--primary); color: #fff; }
+
+    /* Main Container */
+    .main-content { flex: 1; display: flex; flex-direction: column; background: var(--bg-primary); overflow: hidden; }
+    .topbar { height: 64px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: var(--bg-surface); }
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-purple); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+
+    /* Views */
+    .view-panel { display: none; height: calc(100vh - 64px); padding: 32px; overflow-y: auto; }
+    .view-panel.active { display: flex; flex-direction: column; }
+
+    /* Chat UI */
+    .chat-layout { display: flex; height: 100%; gap: 24px; }
+    .chat-sidebar { width: 260px; background: var(--bg-surface); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border-color); }
+    .btn-new-chat { background: var(--primary); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .conv-list { list-style: none; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .conv-item { padding: 10px 12px; border-radius: 8px; background: var(--bg-card); cursor: pointer; color: var(--text-muted); font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conv-item.active { border: 1px solid var(--primary); color: #fff; }
+
+    .chat-main { flex: 1; background: var(--bg-surface); border-radius: var(--radius); border: 1px solid var(--border-color); display: flex; flex-direction: column; overflow: hidden; }
+    .chat-messages { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+    .message-bubble { max-width: 80%; padding: 16px; border-radius: 16px; line-height: 1.5; font-size: 0.95rem; }
+    .message-bubble.user { background: var(--primary); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .message-bubble.assistant { background: var(--bg-card); color: var(--text-main); align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid var(--border-color); }
+    .sql-box { background: #0d1117; padding: 12px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #58a6ff; margin-top: 8px; overflow-x: auto; }
+
+    .chat-input-area { padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; gap: 12px; }
+    .chat-input { flex: 1; background: var(--bg-card); border: 1px solid var(--border-color); padding: 14px 18px; border-radius: 24px; color: #fff; outline: none; font-size: 0.95rem; }
+    .btn-send { width: 48px; height: 48px; border-radius: 50%; background: var(--primary); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+    /* Cards & Forms */
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .card { background: var(--bg-surface); border-radius: var(--radius); border: 1px solid var(--border-color); padding: 24px; }
+    .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; margin-bottom: 6px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+    .form-input, .form-select { width: 100%; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; outline: none; }
+    .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; background: var(--primary); color: #fff; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal { background: var(--bg-surface); width: 440px; border-radius: var(--radius); border: 1px solid var(--border-color); padding: 32px; }
+  </style>
+</head>
+<body>
+
+  <!-- Auth Modal -->
+  <div id="authModal" class="modal-overlay">
+    <div class="modal">
+      <h2 style="margin-bottom: 8px; font-size: 1.5rem;">Welcome to NexusAI</h2>
+      <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 0.9rem;">Sign in to your tenant account</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label">Tenant Slug</label>
+          <input type="text" id="tenantSlug" class="form-input" value="platform-admin" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="email" class="form-input" value="admin@platform.local" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="password" class="form-input" value="admin123456" required />
+        </div>
+        <button type="submit" class="btn" style="width: 100%; padding: 12px; margin-top: 12px;">Sign In</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- App Layout -->
+  <div class="sidebar">
+    <div class="brand">
+      <i class="fa-solid fa-brain"></i> NexusAI
+    </div>
+    <ul class="nav-list">
+      <li class="nav-item active" onclick="switchTab('chatTab')"><i class="fa-solid fa-comments"></i> Hybrid Chat</li>
+      <li class="nav-item" onclick="switchTab('connTab')"><i class="fa-solid fa-database"></i> Databases</li>
+      <li class="nav-item" onclick="switchTab('kbTab')"><i class="fa-solid fa-folder-open"></i> Documents</li>
+      <li class="nav-item" onclick="switchTab('secTab')"><i class="fa-solid fa-shield-halved"></i> Security & RLS</li>
+    </ul>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h3 id="currentTabTitle">Hybrid Chat</h3>
+      <div class="user-info">
+        <div class="avatar">A</div>
+        <span id="userEmailSpan" style="font-weight: 500; font-size: 0.9rem;">admin@platform.local</span>
+      </div>
+    </div>
+
+    <!-- Chat View -->
+    <div id="chatTab" class="view-panel active">
+      <div class="chat-layout">
+        <div class="chat-sidebar">
+          <button class="btn-new-chat" onclick="createNewConversation()"><i class="fa-solid fa-plus"></i> New Chat</button>
+          <ul class="conv-list" id="convList"></ul>
+        </div>
+        <div class="chat-main">
+          <div class="chat-messages" id="chatMessages">
+            <div class="message-bubble assistant">
+              Hello! I am your AI Business Analyst. Ask me natural language questions about your live database or uploaded documents.
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Type your question (e.g. What were top sales last month?)..." onkeypress="if(event.key==='Enter') sendMessage()" />
+            <button class="btn-send" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connections View -->
+    <div id="connTab" class="view-panel">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Add Database Connection</div>
+          <form id="connForm">
+            <div class="form-group">
+              <label class="form-label">Connection Name</label>
+              <input type="text" id="connName" class="form-input" placeholder="Production Postgres" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Database Type</label>
+              <select id="dbType" class="form-select">
+                <option value="postgresql">PostgreSQL</option>
+                <option value="mysql">MySQL</option>
+                <option value="sqlserver">SQL Server</option>
+                <option value="oracle">Oracle</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Host</label>
+              <input type="text" id="dbHost" class="form-input" value="localhost" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Port</label>
+              <input type="number" id="dbPort" class="form-input" value="5432" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Database Name</label>
+              <input type="text" id="dbName" class="form-input" value="texttosql_db" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Username</label>
+              <input type="text" id="dbUser" class="form-input" value="texttosql_user" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <input type="password" id="dbPass" class="form-input" value="password" required />
+            </div>
+            <button type="submit" class="btn" style="width:100%;">Connect & Sync Schema</button>
+          </form>
+        </div>
+        <div class="card">
+          <div class="card-title">Active Database Connections</div>
+          <div id="connectionsList" style="color: var(--text-muted);">No connections configured yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Knowledge Base View -->
+    <div id="kbTab" class="view-panel">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Create Knowledge Base & Upload</div>
+          <form id="kbForm">
+            <div class="form-group">
+              <label class="form-label">Knowledge Base Name</label>
+              <input type="text" id="kbName" class="form-input" placeholder="Quarterly Financial Reports" required />
+            </div>
+            <button type="submit" class="btn" style="margin-bottom: 24px;">Create Collection</button>
+          </form>
+          <div class="form-group">
+            <label class="form-label">Upload Documents (PDF, DOCX, XLSX, CSV, TXT)</label>
+            <input type="file" id="docFile" class="form-input" accept=".pdf,.docx,.xlsx,.csv,.txt" />
+          </div>
+          <button class="btn" onclick="uploadDoc()" style="background: var(--accent);">Upload & Process</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Document Repositories</div>
+          <div id="kbList" style="color: var(--text-muted);">No documents uploaded yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security View -->
+    <div id="secTab" class="view-panel">
+      <div class="card">
+        <div class="card-title">Row-Level Security (RLS) & Security Filters</div>
+        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">
+          Configure mandatory server-side row level security filters that are appended to generated SQL AST before execution.
+        </p>
+        <form id="rlsForm">
+          <div class="form-group">
+            <label class="form-label">Target Table</label>
+            <input type="text" id="rlsTable" class="form-input" placeholder="orders" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Filter Expression (SQL WHERE clause fragment)</label>
+            <input type="text" id="rlsExpr" class="form-input" placeholder="tenant_id = 't1' AND region = 'US'" required />
+          </div>
+          <button type="submit" class="btn">Apply Mandatory Filter</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let token = "";
+    let activeConversationId = null;
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const slug = document.getElementById("tenantSlug").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("/api/v1/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tenant_slug: slug, email, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          token = data.access_token;
+          document.getElementById("authModal").style.display = "none";
+          document.getElementById("userEmailSpan").innerText = email;
+          loadConversations();
+        } else {
+          alert(data.error?.message || "Login failed");
+        }
+      } catch (err) {
+        alert("Login failed: " + err);
+      }
+    });
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
+    }
+
+    async function loadConversations() {
+      const res = await fetch("/api/v1/conversations", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const convs = await res.json();
+        const list = document.getElementById("convList");
+        list.innerHTML = "";
+        convs.forEach(c => {
+          const li = document.createElement("li");
+          li.className = "conv-item" + (c.id === activeConversationId ? " active" : "");
+          li.innerText = c.title || "Conversation";
+          li.onclick = () => selectConversation(c.id);
+          list.appendChild(li);
+        });
+      }
+    }
+
+    async function createNewConversation() {
+      const res = await fetch("/api/v1/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ title: "New Query Session", mode: "hybrid" })
+      });
+      if (res.ok) {
+        const conv = await res.json();
+        activeConversationId = conv.id;
+        loadConversations();
+      }
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("chatInput");
+      const msg = input.value.strip ? input.value.trim() : input.value;
+      if (!msg) return;
+      if (!activeConversationId) await createNewConversation();
+
+      appendMessage("user", msg);
+      input.value = "";
+
+      const res = await fetch("/api/v1/chat/message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ conversation_id: activeConversationId, message: msg })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        appendMessage("assistant", data.content, data.sql_query);
+      }
+    }
+
+    function appendMessage(role, content, sql = null) {
+      const container = document.getElementById("chatMessages");
+      const div = document.createElement("div");
+      div.className = `message-bubble ${role}`;
+      let html = content;
+      if (sql) {
+        html += `<div class="sql-box">SQL: ${sql}</div>`;
+      }
+      div.innerHTML = html;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+  </script>
+</body>
+</html>
