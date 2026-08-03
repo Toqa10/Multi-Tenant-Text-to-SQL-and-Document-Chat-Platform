@@ -11,6 +11,7 @@ Design principles:
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, String, Text, UniqueConstraint
@@ -69,8 +70,8 @@ class DatabaseConnection(Base, AuditableMixin):
         Boolean, nullable=False, default=True, server_default="true"
     )
     # Last successful connection test timestamp
-    last_tested_at: Mapped[Any | None] = mapped_column(nullable=True)
-    last_schema_sync_at: Mapped[Any | None] = mapped_column(nullable=True)
+    last_tested_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    last_schema_sync_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     # Relationships
     tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="database_connections")
