@@ -47,7 +47,7 @@ Services will be available at:
 - **MinIO Console**: [http://localhost:9001](http://localhost:9001)
 - **Prometheus**: [http://localhost:9090](http://localhost:9090)
 - **Grafana**: [http://localhost:3000](http://localhost:3000)
-
+**Front/ react** :http://localhost:5173/
 ---
 
 ## Running Database Migrations
