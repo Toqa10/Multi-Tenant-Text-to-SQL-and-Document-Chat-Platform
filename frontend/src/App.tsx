@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Database, FileText, Settings, Send, Bot, User, Menu, Plus, Server } from 'lucide-react';
+import { Database, FileText, Settings, Send, Bot, User, Menu, Plus, Server, Upload } from 'lucide-react';
 import { ChatService, DatabaseService } from './api';
 import './App.css';
 
@@ -22,6 +22,7 @@ function App() {
   const [input, setInput] = useState('');
   const [isDbModalOpen, setIsDbModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeView, setActiveView] = useState<'chat' | 'upload' | 'settings'>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -31,6 +32,16 @@ function App() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleNewChat = () => {
+    setMessages([{
+      id: Date.now().toString(),
+      role: 'ai',
+      content: 'Hello! I am your AI assistant for Text-to-SQL and Document Chat. How can I help you today?',
+      timestamp: new Date()
+    }]);
+    setActiveView('chat');
+  };
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -82,14 +93,14 @@ function App() {
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <h1 className="gradient-text font-bold">
+          <h1 className="gradient-text font-bold cursor-pointer" onClick={() => setActiveView('chat')}>
             <Bot size={28} color="var(--accent-primary)" />
             AI Platform
           </h1>
         </div>
         
         <div className="sidebar-content">
-          <button className="btn btn-primary w-full justify-center">
+          <button className="btn btn-primary w-full justify-center" onClick={handleNewChat}>
             <Plus size={18} />
             New Chat
           </button>
@@ -97,20 +108,26 @@ function App() {
           <div className="flex-col gap-2">
             <h3 className="text-xs font-bold text-muted" style={{textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-muted)'}}>Data Sources</h3>
             <button 
-              className="btn btn-ghost w-full" style={{justifyContent: 'flex-start'}}
+              className={`btn btn-ghost w-full ${isDbModalOpen ? 'active' : ''}`} style={{justifyContent: 'flex-start'}}
               onClick={() => setIsDbModalOpen(true)}
             >
               <Database size={18} />
               Connect Database
             </button>
-            <button className="btn btn-ghost w-full" style={{justifyContent: 'flex-start'}}>
+            <button 
+              className={`btn btn-ghost w-full ${activeView === 'upload' ? 'active' : ''}`} style={{justifyContent: 'flex-start', background: activeView === 'upload' ? 'rgba(255,255,255,0.05)' : ''}}
+              onClick={() => setActiveView('upload')}
+            >
               <FileText size={18} />
               Upload Documents
             </button>
           </div>
           
           <div style={{marginTop: 'auto'}}>
-            <button className="btn btn-ghost w-full" style={{justifyContent: 'flex-start'}}>
+            <button 
+              className={`btn btn-ghost w-full ${activeView === 'settings' ? 'active' : ''}`} style={{justifyContent: 'flex-start', background: activeView === 'settings' ? 'rgba(255,255,255,0.05)' : ''}}
+              onClick={() => setActiveView('settings')}
+            >
               <Settings size={18} />
               Settings
             </button>
@@ -118,60 +135,111 @@ function App() {
         </div>
       </aside>
 
-      {/* Main Chat Area */}
+      {/* Main Content Area */}
       <main className="main-content">
-        <div className="chat-container">
-          <div className="chat-history">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`message-wrapper ${msg.role}`}>
-                <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start'}}>
-                  {msg.role === 'user' ? (
-                    <>
-                      <span className="text-xs text-muted">You</span>
-                      <User size={14} color="var(--accent-primary)" />
-                    </>
-                  ) : (
-                    <>
-                      <Bot size={14} color="var(--accent-secondary)" />
-                      <span className="text-xs text-muted">AI Assistant</span>
-                    </>
-                  )}
+        {activeView === 'chat' && (
+          <div className="chat-container">
+            <div className="chat-history">
+              {messages.map((msg) => (
+                <div key={msg.id} className={`message-wrapper ${msg.role}`}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start'}}>
+                    {msg.role === 'user' ? (
+                      <>
+                        <span className="text-xs text-muted">You</span>
+                        <User size={14} color="var(--accent-primary)" />
+                      </>
+                    ) : (
+                      <>
+                        <Bot size={14} color="var(--accent-secondary)" />
+                        <span className="text-xs text-muted">AI Assistant</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="message-bubble">
+                    {msg.content}
+                  </div>
                 </div>
-                <div className="message-bubble">
-                  {msg.content}
+              ))}
+              {isLoading && (
+                <div className="message-wrapper ai">
+                  <div className="message-bubble animate-pulse-glow" style={{display: 'flex', gap: '4px', alignItems: 'center', padding: '16px'}}>
+                    <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-primary)', animation: 'bounce 1.4s infinite ease-in-out both'}} />
+                    <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-primary)', animation: 'bounce 1.4s infinite ease-in-out both', animationDelay: '0.2s'}} />
+                    <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-primary)', animation: 'bounce 1.4s infinite ease-in-out both', animationDelay: '0.4s'}} />
+                  </div>
                 </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="message-wrapper ai">
-                <div className="message-bubble animate-pulse-glow" style={{display: 'flex', gap: '4px', alignItems: 'center', padding: '16px'}}>
-                  <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-primary)', animation: 'bounce 1.4s infinite ease-in-out both'}} />
-                  <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-primary)', animation: 'bounce 1.4s infinite ease-in-out both', animationDelay: '0.2s'}} />
-                  <div style={{width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-primary)', animation: 'bounce 1.4s infinite ease-in-out both', animationDelay: '0.4s'}} />
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
-          <form className="chat-input-container" onSubmit={handleSend}>
-            <textarea
-              className="chat-input"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask a question about your database or documents..."
-              rows={1}
-            />
-            <button 
-              type="submit" 
-              className="send-button"
-              disabled={!input.trim() || isLoading}
-            >
-              <Send size={18} />
-            </button>
-          </form>
-        </div>
+            <form className="chat-input-container" onSubmit={handleSend}>
+              <textarea
+                className="chat-input"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask a question about your database or documents..."
+                rows={1}
+              />
+              <button 
+                type="submit" 
+                className="send-button"
+                disabled={!input.trim() || isLoading}
+              >
+                <Send size={18} />
+              </button>
+            </form>
+          </div>
+        )}
+
+        {activeView === 'upload' && (
+          <div className="chat-container" style={{justifyContent: 'center', alignItems: 'center'}}>
+            <div className="glass-panel" style={{padding: '48px', textAlign: 'center', maxWidth: '600px', width: '100%'}}>
+              <Upload size={48} color="var(--accent-primary)" style={{marginBottom: '24px'}} />
+              <h2 className="gradient-text font-bold" style={{fontSize: '2rem', marginBottom: '16px'}}>Upload Documents</h2>
+              <p style={{color: 'var(--text-secondary)', marginBottom: '32px'}}>
+                Upload PDFs, CSVs, or Word documents to chat with them.
+              </p>
+              <div style={{border: '2px dashed var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '48px', cursor: 'pointer', transition: 'all 0.3s'}} className="upload-dropzone">
+                <p>Drag & drop files here or click to browse</p>
+                <input type="file" multiple style={{display: 'none'}} id="fileUpload" />
+                <button className="btn btn-primary" style={{marginTop: '16px'}} onClick={() => document.getElementById('fileUpload')?.click()}>
+                  Select Files
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeView === 'settings' && (
+          <div className="chat-container">
+            <div className="glass-panel" style={{padding: '32px', maxWidth: '800px', width: '100%', margin: '0 auto'}}>
+              <h2 className="gradient-text font-bold" style={{fontSize: '2rem', marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '12px'}}>
+                <Settings size={28} />
+                Platform Settings
+              </h2>
+              <div style={{display: 'flex', flexDirection: 'column', gap: '24px'}}>
+                <div className="form-group">
+                  <label>LLM Provider</label>
+                  <select className="input-field">
+                    <option value="openai">OpenAI (GPT-4)</option>
+                    <option value="anthropic">Anthropic (Claude 3)</option>
+                    <option value="local">Local (Ollama)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>OpenAI API Key</label>
+                  <input type="password" className="input-field" placeholder="sk-..." />
+                </div>
+                <div className="form-group">
+                  <label>System Prompt</label>
+                  <textarea className="input-field" rows={4} defaultValue="You are an expert AI data analyst and document researcher. Answer queries accurately based on the provided context." />
+                </div>
+                <button className="btn btn-primary" style={{alignSelf: 'flex-start'}}>Save Settings</button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Database Connection Modal */}
@@ -184,7 +252,18 @@ function App() {
               Connect Database
             </h2>
             
-            <form onSubmit={e => { e.preventDefault(); setIsDbModalOpen(false); }}>
+            <form onSubmit={async e => { 
+              e.preventDefault(); 
+              setIsDbModalOpen(false); 
+              // Add a system message showing connection success
+              setMessages(prev => [...prev, {
+                id: Date.now().toString(),
+                role: 'ai',
+                content: 'Successfully connected to the database. The schema has been synced. You can now ask natural language questions about your data!',
+                timestamp: new Date()
+              }]);
+              setActiveView('chat');
+            }}>
               <div className="form-group">
                 <label>Connection Name</label>
                 <input type="text" className="input-field" placeholder="e.g. Production PostgreSQL" required />
