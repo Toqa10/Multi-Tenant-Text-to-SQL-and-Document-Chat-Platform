@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Database, FileText, Settings, Send, Bot, User, Menu, Plus, Server } from 'lucide-react';
+import { ChatService, DatabaseService } from './api';
 import './App.css';
 
 interface Message {
@@ -46,17 +47,27 @@ function App() {
     setInput('');
     setIsLoading(true);
 
-    // Simulate API call to backend
-    setTimeout(() => {
+    try {
+      const response = await ChatService.sendMessage(userMessage.content);
+      
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'ai',
-        content: `I received your query: "${userMessage.content}". This is a placeholder response from the frontend UI. The backend integration can be configured in api.ts.`,
+        content: response.answer || response.message || 'Sorry, I could not generate an answer.',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'ai',
+        content: 'Error: Could not connect to the backend server. Please make sure the backend is running.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
