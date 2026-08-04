@@ -20,14 +20,15 @@
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| 🖥️ **Frontend UI** | http://localhost:5173 | React/Vite Chat Interface |
-| ⚡ **Backend API** | http://localhost:8000 | FastAPI Application |
-| 📖 **API Docs (Swagger)** | http://localhost:8000/docs | Interactive OpenAPI documentation |
-| 📖 **API Docs (ReDoc)** | http://localhost:8000/redoc | Alternative API documentation |
-| 🌸 **Celery Flower** | http://localhost:5555 | Task Queue Monitoring Dashboard |
-| 🗄️ **MinIO Console** | http://localhost:9001 | Object Storage (requires Docker) |
-| 📊 **Prometheus** | http://localhost:9090 | Metrics collection (requires Docker) |
-| 📈 **Grafana** | http://localhost:3000 | Metrics visualization (requires Docker) |
+| 🖥️ **Frontend UI** | [http://localhost:5173](http://localhost:5173) | ✅ React/Vite Chat Interface |
+| ⚡ **Backend API** | [http://localhost:8000](http://localhost:8000) | ✅ FastAPI Application |
+| 📖 **API Docs (Swagger)** | [http://localhost:8000/docs](http://localhost:8000/docs) | ✅ Interactive OpenAPI documentation |
+| 🌸 **Celery Flower** | [http://localhost:5555](http://localhost:5555) | ✅ Task Queue Monitoring Dashboard |
+| 🗄️ **MinIO Console** | [http://localhost:9001](http://localhost:9001) | ⚠️ Object Storage *(requires Docker)* |
+| 📊 **Prometheus** | [http://localhost:9090](http://localhost:9090) | ⚠️ Metrics collection *(requires Docker)* |
+| 📈 **Grafana** | [http://localhost:3000](http://localhost:3000) | ⚠️ Metrics visualization *(requires Docker)* |
+
+> **Note:** The core services (Frontend, Backend, Flower) run natively via Python and Node. The extra services (MinIO, Prometheus, Grafana) require Docker Desktop to be running.
 
 ---
 
@@ -50,6 +51,8 @@
 
 ### Frontend Chat Interface (localhost:5173)
 > A premium dark-themed UI with glassmorphism effects, featuring the chat interface, database connection modal, document upload, and settings panel.
+
+![Frontend UI](docs/images/frontend_ui.jpg)
 
 **Chat View** — Send natural language queries to your databases or documents:
 - Type any question in plain English (e.g. "Show me all orders from last month")
@@ -76,6 +79,8 @@
 ### API Documentation (localhost:8000/docs)
 > Full interactive OpenAPI/Swagger documentation auto-generated from all 40+ endpoints.
 
+![API Documentation](docs/images/api_docs.jpg)
+
 **Endpoint Groups:**
 ```
 /api/v1/auth/          — Register, login, token refresh, logout
@@ -91,6 +96,8 @@
 
 ### Celery Flower Dashboard (localhost:5555)
 > Real-time monitoring of background task workers. Shows active tasks, task history, worker status, and task statistics.
+
+![Celery Flower](docs/images/celery_flower.jpg)
 
 **Registered Tasks:**
 - `document.process` — Processes uploaded documents (parse → chunk → embed → index)
