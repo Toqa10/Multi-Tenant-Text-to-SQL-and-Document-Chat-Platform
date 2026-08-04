@@ -54,7 +54,6 @@ def configure_logging(log_level: str = "INFO", log_format: str = "json") -> None
         _add_log_level,
         _drop_color_message_key,
         structlog.processors.TimeStamper(fmt="iso", utc=True),
-        structlog.stdlib.add_logger_name,
         structlog.processors.StackInfoRenderer(),
     ]
 
