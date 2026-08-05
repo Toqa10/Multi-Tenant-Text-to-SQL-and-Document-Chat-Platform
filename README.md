@@ -18,17 +18,18 @@
 
 ## 🌐 Live Services & Links
 
-| Service | Local URL | Public/Mobile URL (Over Internet) | Description |
-|---------|-----------|-------------------------|-------------|
-| 🖥️ **Frontend UI** | [http://localhost:5173](http://localhost:5173) | [https://toqa-ai-frontend.loca.lt](https://toqa-ai-frontend.loca.lt) | ✅ React/Vite Chat Interface |
-| ⚡ **Backend API** | [http://localhost:8000](http://localhost:8000) | [https://toqa-ai-backend.loca.lt](https://toqa-ai-backend.loca.lt) | ✅ FastAPI Application |
-| 📖 **API Docs (Swagger)** | [http://localhost:8000/docs](http://localhost:8000/docs) | [https://toqa-ai-backend.loca.lt/docs](https://toqa-ai-backend.loca.lt/docs) | ✅ OpenAPI Docs |
-| 🌸 **Celery Flower** | [http://localhost:5555](http://localhost:5555) | - | ✅ Task Queue UI |
-| 🗄️ **MinIO Console** | [http://localhost:9001](http://localhost:9001) | - | ⚠️ Object Storage *(Docker)* |
-| 📊 **Prometheus** | [http://localhost:9090](http://localhost:9090) | - | ⚠️ Metrics *(Docker)* |
-| 📈 **Grafana** | [http://localhost:3000](http://localhost:3000) | - | ⚠️ Visualization *(Docker)* |
+| Service | Local URL | 🌍 Public URL (Mobile / Any Device) | Description |
+|---------|-----------|--------------------------------------|-------------|
+| 🖥️ **Frontend UI** | [http://localhost:5173](http://localhost:5173) | [https://individually-bid-affect-scientific.trycloudflare.com](https://individually-bid-affect-scientific.trycloudflare.com) | React/Vite Chat Interface |
+| ⚡ **Backend API** | [http://localhost:8000](http://localhost:8000) | [https://adjacent-rendering-photographs-essex.trycloudflare.com](https://adjacent-rendering-photographs-essex.trycloudflare.com) | FastAPI Application |
+| 📖 **API Docs (Swagger)** | [http://localhost:8000/docs](http://localhost:8000/docs) | [https://adjacent-rendering-photographs-essex.trycloudflare.com/docs](https://adjacent-rendering-photographs-essex.trycloudflare.com/docs) | Interactive OpenAPI Docs |
+| 🌸 **Celery Flower** | [http://localhost:5555](http://localhost:5555) | - | Task Queue UI |
+| 🗄️ **MinIO Console** | [http://localhost:9001](http://localhost:9001) | - | Object Storage *(Docker)* |
+| 📊 **Prometheus** | [http://localhost:9090](http://localhost:9090) | - | Metrics *(Docker)* |
+| 📈 **Grafana** | [http://localhost:3000](http://localhost:3000) | - | Visualization *(Docker)* |
 
-> **Note:** The public links are hosted using Localtunnel and will remain online as long as the server is running on the local host. When opening a public link for the first time, click the **"Click to Continue"** button on the warning screen to proceed to the application.
+> **Note:** Public URLs are powered by **Cloudflare Tunnel** (zero-setup, no account needed). They are active while the server is running. Run `python tunnel.py` to generate fresh URLs at any time.
+
 
 
 ---

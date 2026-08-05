@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Use the localtunnel URL for the backend API
-const API_BASE_URL = 'https://toqa-ai-backend.loca.lt/api/v1';
+// Use VITE_API_URL env variable if set (for public tunnels), otherwise fall back to localhost
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 // Create axios instance with default config
 export const api = axios.create({
