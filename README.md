@@ -108,15 +108,21 @@
 ### MinIO Object Storage (localhost:9001) — *Requires Docker*
 > S3-compatible object storage for uploaded documents. Default credentials: `minioadmin` / `minioadmin`.
 
+![MinIO Console](docs/images/minio_console.jpg)
+
 ---
 
 ### Prometheus (localhost:9090) — *Requires Docker*
 > Collects metrics from the FastAPI backend including request rates, latency histograms, error rates, and custom business metrics.
 
+![Prometheus Dashboard](docs/images/prometheus_dashboard.jpg)
+
 ---
 
 ### Grafana (localhost:3000) — *Requires Docker*
 > Visualizes Prometheus metrics with pre-built dashboards. Default credentials: `admin` / `admin`.
+
+![Grafana Dashboard](docs/images/grafana_dashboard.jpg)
 
 ---
 
