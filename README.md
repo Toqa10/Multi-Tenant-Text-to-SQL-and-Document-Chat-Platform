@@ -18,17 +18,18 @@
 
 ## 🌐 Live Services & Links
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| 🖥️ **Frontend UI** | [http://localhost:5173](http://localhost:5173) | ✅ React/Vite Chat Interface |
-| ⚡ **Backend API** | [http://localhost:8000](http://localhost:8000) | ✅ FastAPI Application |
-| 📖 **API Docs (Swagger)** | [http://localhost:8000/docs](http://localhost:8000/docs) | ✅ Interactive OpenAPI documentation |
-| 🌸 **Celery Flower** | [http://localhost:5555](http://localhost:5555) | ✅ Task Queue Monitoring Dashboard |
-| 🗄️ **MinIO Console** | [http://localhost:9001](http://localhost:9001) | ⚠️ Object Storage *(requires Docker)* |
-| 📊 **Prometheus** | [http://localhost:9090](http://localhost:9090) | ⚠️ Metrics collection *(requires Docker)* |
-| 📈 **Grafana** | [http://localhost:3000](http://localhost:3000) | ⚠️ Metrics visualization *(requires Docker)* |
+| Service | Local URL | Public/Mobile URL (Over Internet) | Description |
+|---------|-----------|-------------------------|-------------|
+| 🖥️ **Frontend UI** | [http://localhost:5173](http://localhost:5173) | [https://toqa-ai-frontend.loca.lt](https://toqa-ai-frontend.loca.lt) | ✅ React/Vite Chat Interface |
+| ⚡ **Backend API** | [http://localhost:8000](http://localhost:8000) | [https://toqa-ai-backend.loca.lt](https://toqa-ai-backend.loca.lt) | ✅ FastAPI Application |
+| 📖 **API Docs (Swagger)** | [http://localhost:8000/docs](http://localhost:8000/docs) | [https://toqa-ai-backend.loca.lt/docs](https://toqa-ai-backend.loca.lt/docs) | ✅ OpenAPI Docs |
+| 🌸 **Celery Flower** | [http://localhost:5555](http://localhost:5555) | - | ✅ Task Queue UI |
+| 🗄️ **MinIO Console** | [http://localhost:9001](http://localhost:9001) | - | ⚠️ Object Storage *(Docker)* |
+| 📊 **Prometheus** | [http://localhost:9090](http://localhost:9090) | - | ⚠️ Metrics *(Docker)* |
+| 📈 **Grafana** | [http://localhost:3000](http://localhost:3000) | - | ⚠️ Visualization *(Docker)* |
 
-> **Note:** The core services (Frontend, Backend, Flower) run natively via Python and Node. The extra services (MinIO, Prometheus, Grafana) require Docker Desktop to be running.
+> **Note:** The public links are hosted using Localtunnel and will remain online as long as the server is running on the local host. When opening a public link for the first time, click the **"Click to Continue"** button on the warning screen to proceed to the application.
+
 
 ---
 
